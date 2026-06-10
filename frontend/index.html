@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>危险货物合规查询系统</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #182033;
+      --muted: #667085;
+      --line: #d8deea;
+      --primary: #1d4ed8;
+      --primary-dark: #173ea8;
+      --primary-soft: #e8f0ff;
+      --warning: #fff7e6;
+      --warning-border: #ffc857;
+      --success: #eaf8ef;
+      --danger: #fff0f0;
+      --shadow: 0 12px 30px rgba(15, 23, 42, .08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Arial, sans-serif; background: var(--bg); color: var(--text); }
+    .app-shell { min-height: 100vh; }
+
+    header { background: linear-gradient(135deg, #0f2f6d 0%, #1d4ed8 56%, #4f46e5 100%); color: #fff; padding: 28px 24px 54px; }
+    .header-inner { max-width: 1180px; margin: 0 auto; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+    .logo { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .5px; font-size: 18px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.17); border: 1px solid rgba(255,255,255,.35); font-weight: 900; }
+    .version-badge { padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); color: rgba(255,255,255,.94); font-size: 13px; }
+
+    .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; align-items: end; }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 46px); line-height: 1.12; letter-spacing: -1px; }
+    .subtitle { margin: 0; color: rgba(255,255,255,.84); font-size: 16px; line-height: 1.7; max-width: 720px; }
+
+    .search-card { background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.25); border-radius: var(--radius); padding: 18px; backdrop-filter: blur(10px); }
+    .search-row { display: flex; gap: 10px; align-items: stretch; }
+    input[type="search"] { flex: 1; height: 48px; border: 0; border-radius: 14px; padding: 0 14px; font-size: 16px; outline: none; }
+    button { border: 0; border-radius: 14px; padding: 0 18px; font-weight: 700; cursor: pointer; transition: .18s ease; font-family: inherit; }
+    .btn-primary { background: #fff; color: #123378; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.16); }
+    .quick-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .quick-tag { color: #fff; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); border-radius: 999px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+    .quick-tag:hover { background: rgba(255,255,255,.25); }
+
+    main { max-width: 1180px; margin: -32px auto 70px; padding: 0 24px; }
+    .layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 22px; align-items: start; }
+
+    .side-card, .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .side-card { padding: 16px; position: sticky; top: 18px; }
+    .side-title { color: var(--muted); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 10px; }
+    .nav-link { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 11px 12px; border-radius: 12px; color: var(--text); text-decoration: none; font-size: 14px; cursor: pointer; }
+    .nav-link:hover, .nav-link.active { background: var(--primary-soft); color: var(--primary); }
+    .card { padding: 22px; margin-bottom: 20px; }
+
+    .result-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+    .un-badge { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 8px 12px; background: var(--warning); border: 1px solid var(--warning-border); font-weight: 800; color: #7a4b00; }
+    h2 { margin: 0 0 8px; font-size: 28px; }
+    h3 { margin: 0 0 14px; font-size: 20px; }
+    .muted { color: var(--muted); line-height: 1.6; }
+
+    .meta-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    .meta-box { background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+    .meta-label { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .meta-value { font-weight: 800; font-size: 17px; }
+
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; font-size: 14px; }
+    th, td { border: 1px solid #ccd3df; padding: 10px 8px; vertical-align: top; text-align: center; }
+    th { background: #f2f5fa; font-weight: 800; }
+    td.name-cell { text-align: left; min-width: 260px; }
+    td.code-cell { width: 92px; }
+    .column-no { display: block; color: #667085; font-weight: 700; margin-top: 4px; font-size: 12px; }
+
+    .click-code { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; margin: 2px 0; padding: 5px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-weight: 800; text-decoration: none; cursor: pointer; border: 1px solid #c8d8ff; transition: .15s ease; }
+    .click-code:hover { background: var(--primary); color: #fff; transform: translateY(-1px); }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border-radius: 999px; background: #f8fafc; border: 1px solid var(--line); color: var(--text); text-decoration: none; font-weight: 700; cursor: pointer; }
+    .chip:hover { border-color: #9ab4ff; background: var(--primary-soft); color: var(--primary); }
+    .chip small { color: var(--muted); font-weight: 600; }
+
+    .rule-page .rule-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .rule-code { font-size: 42px; font-weight: 900; letter-spacing: -1px; color: var(--primary); }
+    .pill { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-weight: 800; font-size: 13px; }
+    .content-block { background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-top: 12px; line-height: 1.75; }
+    .checklist { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .checklist li { display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; line-height: 1.6; }
+    .checkmark { width: 22px; height: 22px; flex: 0 0 auto; border-radius: 7px; background: var(--success); color: #12833f; display: grid; place-items: center; font-weight: 900; margin-top: 1px; }
+
+    .source-box { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; padding: 13px 15px; margin-top: 14px; color: #6b4e00; }
+    .back-link { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; color: var(--primary); font-weight: 800; cursor: pointer; text-decoration: none; }
+    .empty { padding: 34px; text-align: center; color: var(--muted); }
+    .notice { border: 1px solid #fecaca; background: var(--danger); border-radius: 14px; padding: 12px 14px; line-height: 1.7; color: #7f1d1d; margin-top: 12px; }
+
+    /* Search results */
+    .search-results { list-style: none; padding: 0; margin: 0; }
+    .search-results li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px; cursor: pointer; transition: .15s ease; }
+    .search-results li:hover { border-color: #9ab4ff; background: var(--primary-soft); }
+    .sr-left { flex: 1; }
+    .sr-un { font-weight: 800; font-size: 18px; color: var(--primary); }
+    .sr-name { font-size: 14px; margin-top: 2px; }
+    .sr-class { font-size: 13px; color: var(--muted); font-weight: 700; }
+
+    .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 18px; }
+
+    footer { text-align: center; color: var(--muted); padding: 30px 24px 60px; font-size: 13px; }
+    @media (max-width: 900px) { .hero, .layout { grid-template-columns: 1fr; } .side-card { position: static; } .meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { header { padding: 22px 16px 46px; } main { padding: 0 14px; } .search-row { flex-direction: column; } .meta-grid { grid-template-columns: 1fr; } .card { padding: 16px; } .topbar { flex-direction: column; align-items: flex-start; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <div class="header-inner">
+        <div class="topbar">
+          <div class="logo"><div class="logo-mark">UN</div> 危险货物合规查询系统</div>
+          <div class="version-badge">UN Model Regulations Rev.23 · v0.1 MVP</div>
+        </div>
+        <div class="hero">
+          <div>
+            <h1>输入 UN 编号，自动关联后续法规要求</h1>
+            <p class="subtitle">基于联合国危险货物运输建议书（规章范本）第23修订版。输入UN编号，系统返回危险货物一览表信息，特殊规定、包装指南等均可点击查看详情。</p>
+          </div>
+          <div class="search-card">
+            <div class="search-row">
+              <input id="searchInput" type="search" placeholder="请输入 UN 编号 / 名称 / 规则编号" />
+              <button class="btn-primary" id="searchBtn">查询</button>
+            </div>
+            <div class="quick-tags">
+              <span class="quick-tag" data-q="3480">UN3480 锂离子电池组</span>
+              <span class="quick-tag" data-q="P903">P903 包装指南</span>
+              <span class="quick-tag" data-q="188">特殊规定 188</span>
+              <span class="quick-tag" data-q="1950">UN1950 气雾剂</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="layout">
+        <aside class="side-card" id="sidebar">
+          <p class="side-title">快捷导航</p>
+          <div id="sidebarNav"></div>
+        </aside>
+        <section id="app"><div class="loading">加载中...</div></section>
+      </div>
+    </main>
+
+    <footer>危险货物合规查询系统 MVP · 数据来源：UN Recommendations on the Transport of Dangerous Goods Rev.23</footer>
+  </div>
+
+  <script>
+    const app = document.getElementById('app');
+    const searchInput = document.getElementById('searchInput');
+    const sidebarNav = document.getElementById('sidebarNav');
+
+    // Router
+    function getRoute() {
+      const hash = window.location.hash || '#/';
+      return hash.replace(/^#\/?/, '');
+    }
+
+    async function fetchJSON(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // Classify rule code
+    function classifyCode(code) {
+      if (/^LP/i.test(code)) return 'LP';
+      if (/^P/i.test(code)) return 'P';
+      if (/^IBC/i.test(code)) return 'IBC';
+      if (/^TP/i.test(code)) return 'TP';
+      if (/^T\d/i.test(code)) return 'T';
+      if (/^BK/i.test(code)) return 'BK';
+      if (/^PP/i.test(code)) return 'PP';
+      return 'SP';
+    }
+
+    function ruleLabel(type) {
+      const map = { SP: '特殊规定', P: '包装指南', LP: '大型包装', IBC: '中型散装容器', T: '罐柜指南', TP: '罐柜特殊规定', BK: '散装容器', PP: '特殊包装规定' };
+      return map[type] || '规则';
+    }
+
+    function codeLink(code, extra) {
+      const type = classifyCode(code);
+      return `<a class="click-code" href="#/rule/${type}/${encodeURIComponent(code)}">${code}</a>${extra || ''}`;
+    }
+
+    function chips(codes) {
+      if (!codes || codes.length === 0) return `<span class="muted">—</span>`;
+      return `<div class="chips">${codes.map(c => {
+        const type = classifyCode(c);
+        return `<a class="chip" href="#/rule/${type}/${encodeURIComponent(c)}"><strong>${c}</strong><small>${ruleLabel(type)}</small></a>`;
+      }).join('')}</div>`;
+    }
+
+    function updateSidebar(items) {
+      if (!items || items.length === 0) { sidebarNav.innerHTML = '<p class="muted" style="padding:8px;">查询后显示导航</p>'; return; }
+      sidebarNav.innerHTML = items.map(i => `<a class="nav-link" href="${i.href}">${i.label} <span>›</span></a>`).join('');
+    }
+
+    // --- Pages ---
+
+    async function renderGoods(un) {
+      try {
+        const data = await fetchJSON(`/api/compliance/${un}`);
+        const b = data.basic;
+
+        updateSidebar([
+          { href: `#/goods/${un}`, label: `UN${un} 查询结果` },
+          ...data.special_provisions.slice(0, 3).map(sp => ({ href: `#/rule/${classifyCode(sp.code)}/${sp.code}`, label: `${sp.code} ${sp.title_cn || ''}` })),
+          ...data.packing_instructions.slice(0, 3).map(pi => ({ href: `#/rule/${classifyCode(pi.code)}/${pi.code}`, label: `${pi.code} ${pi.title_cn || ''}` })),
+        ]);
+
+        const displayName = b.name_cn || b.name_en || `UN${un}`;
+
+        let html = `
+          <div class="card">
+            <div class="result-head">
+              <div>
+                <span class="un-badge">UN ${un}</span>
+                <h2 style="margin-top:12px;">${displayName}</h2>
+                ${b.name_cn && b.name_en ? `<p class="muted">${b.name_en}</p>` : ''}
+              </div>
+              <div class="pill">第 ${b.class_or_division} 类</div>
+            </div>
+            <div class="meta-grid">
+              <div class="meta-box"><div class="meta-label">类别或项</div><div class="meta-value">${b.class_or_division}</div></div>
+              <div class="meta-box"><div class="meta-label">次要危险</div><div class="meta-value">${b.subsidiary_hazard || '—'}</div></div>
+              <div class="meta-box"><div class="meta-label">有限数量</div><div class="meta-value">${b.limited_quantity}</div></div>
+              <div class="meta-box"><div class="meta-label">例外数量</div><div class="meta-value">${b.excepted_quantity}</div></div>
+            </div>
+          </div>`;
+
+        if (data.special_provisions.length > 0) {
+          html += `<div class="card"><h3>特殊规定</h3>${chips(data.special_provisions.map(sp => sp.code))}</div>`;
+        }
+        if (data.packing_instructions.length > 0) {
+          html += `<div class="card"><h3>包装和大型包装指南</h3>${chips(data.packing_instructions.map(pi => pi.code))}</div>`;
+        }
+        if (data.checklist.length > 0) {
+          html += `<div class="card"><h3>合规检查单</h3><ul class="checklist">${data.checklist.map(c => `<li><span class="checkmark">✓</span><span>${c}</span></li>`).join('')}</ul></div>`;
+        }
+        if (data.sources.length > 0) {
+          html += `<div class="card"><div class="source-box"><strong>来源</strong><span>${data.sources.join('；')}</span></div></div>`;
+        }
+
+        html += `<div class="notice">⚠️ 注意：本系统为 MVP 版本，部分条款摘要待人工审核完善。正式合规决策请以官方规章原文为准。</div>`;
+        app.innerHTML = html;
+
+      } catch (e) {
+        app.innerHTML = `<div class="card empty"><h3>未找到 UN${un}</h3><p>请检查编号是否正确，或尝试搜索。</p><a class="back-link" href="#/">← 返回首页</a></div>`;
+        updateSidebar([]);
+      }
+    }
+
+    async function renderRule(type, code) {
+      try {
+        const reg = await fetchJSON(`/api/regulations/${code}`);
+        const labels = { special_provision: '特殊规定', packing_instruction: '包装指南', large_packing: '大型包装指南' };
+
+        updateSidebar([
+          { href: '#/', label: '← 返回首页' },
+          { href: `#/rule/${type}/${code}`, label: `${code} ${reg.title_cn || reg.title_en}` },
+        ]);
+
+        app.innerHTML = `
+          <div class="card rule-page">
+            <a class="back-link" href="#/">← 返回首页</a>
+            <div class="rule-header">
+              <div>
+                <div class="pill">${labels[reg.rule_type] || reg.rule_type}</div>
+                <div class="rule-code">${reg.code}</div>
+                <h2>${reg.title_cn || reg.title_en}</h2>
+              </div>
+            </div>
+            ${reg.summary_cn ? `<div class="content-block"><strong>业务摘要：</strong><br>${reg.summary_cn}</div>` : ''}
+            ${reg.original_text ? `<div class="content-block"><strong>原文：</strong><br>${reg.original_text}</div>` : ''}
+            ${reg.key_points_list && reg.key_points_list.length > 0 ? `
+              <div class="content-block">
+                <strong>核心检查项：</strong>
+                <ul class="checklist" style="margin-top:10px;">${reg.key_points_list.map(k => `<li><span class="checkmark">✓</span><span>${k}</span></li>`).join('')}</ul>
+              </div>` : ''}
+            ${reg.source_page ? `<div class="source-box"><strong>来源</strong><span>${reg.source_volume}，第 ${reg.source_page} 页，${reg.source_section} 章</span></div>` : ''}
+          </div>`;
+
+      } catch (e) {
+        app.innerHTML = `<div class="card empty"><h3>未找到规则 ${code}</h3><p>该规则尚未录入数据库。</p><a class="back-link" href="#/">← 返回首页</a></div>`;
+        updateSidebar([]);
+      }
+    }
+
+    async function renderSearch(q) {
+      try {
+        const data = await fetchJSON(`/api/search?q=${encodeURIComponent(q)}`);
+        updateSidebar([]);
+
+        let html = `<div class="card"><h3>搜索结果：${q}</h3></div>`;
+
+        if (data.goods.length > 0) {
+          html += `<div class="card"><h3>危险货物</h3><ul class="search-results">`;
+          data.goods.forEach(g => {
+            const name = g.name_cn || g.name_en || '';
+            html += `<li onclick="location.hash='#/goods/${g.un_number}'"><div class="sr-left"><div class="sr-un">UN${g.un_number}</div><div class="sr-name">${name}</div></div><div class="sr-class">第${g.class_or_division}类</div></li>`;
+          });
+          html += `</ul></div>`;
+        }
+
+        if (data.regulations.length > 0) {
+          html += `<div class="card"><h3>法规规则</h3><ul class="search-results">`;
+          data.regulations.forEach(r => {
+            const label = r.title_cn || r.title_en || r.code;
+            html += `<li onclick="location.hash='#/rule/${classifyCode(r.code)}/${r.code}'"><div class="sr-left"><div class="sr-un">${r.code}</div><div class="sr-name">${label}</div></div><div class="sr-class">${ruleLabel(classifyCode(r.code))}</div></li>`;
+          });
+          html += `</ul></div>`;
+        }
+
+        if (data.goods.length === 0 && data.regulations.length === 0) {
+          html += `<div class="card empty"><p>未找到匹配结果，请尝试其他关键词。</p></div>`;
+        }
+
+        app.innerHTML = html;
+
+      } catch (e) {
+        app.innerHTML = `<div class="card empty"><p>搜索出错：${e.message}</p></div>`;
+      }
+    }
+
+    function renderHome() {
+      updateSidebar([
+        { href: '#/goods/3480', label: 'UN3480 锂离子电池组' },
+        { href: '#/goods/3481', label: 'UN3481 设备中锂电池' },
+        { href: '#/goods/1950', label: 'UN1950 气雾剂' },
+        { href: '#/goods/3090', label: 'UN3090 锂金属电池' },
+      ]);
+      app.innerHTML = `
+        <div class="card empty">
+          <h3>欢迎使用危险货物合规查询系统</h3>
+          <p style="margin-top:12px;">在上方搜索框输入 UN 编号（如 3480）、货物名称或规则编号（如 P903），即可查看相关合规要求。</p>
+          <p style="margin-top:8px;">快捷查询：UN3480 · UN3481 · UN3090 · UN1950 · P903 · SP188</p>
+        </div>`;
+    }
+
+    // Router handler
+    async function route() {
+      const hash = window.location.hash || '#/';
+      const parts = hash.replace(/^#\/?/, '').split('/');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (parts[0] === 'goods' && parts[1]) {
+        await renderGoods(parts[1]);
+      } else if (parts[0] === 'rule' && parts[2]) {
+        await renderRule(parts[1], decodeURIComponent(parts[2]));
+      } else {
+        renderHome();
+      }
+    }
+
+    // Search handler
+    function doSearch() {
+      const q = searchInput.value.trim();
+      if (!q) return;
+      const isRule = /^(P|LP|IBC|T|TP|BK|PP|SP)\d+/i.test(q);
+      const isUN = /^\d+$/.test(q);
+      if (isUN) {
+        location.hash = `#/goods/${q}`;
+      } else if (isRule) {
+        location.hash = `#/rule/${classifyCode(q)}/${q}`;
+      } else {
+        location.hash = `#/search/${encodeURIComponent(q)}`;
+      }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+    document.querySelectorAll('.quick-tag').forEach(tag => {
+      tag.addEventListener('click', () => { searchInput.value = tag.dataset.q; doSearch(); });
+    });
+    window.addEventListener('hashchange', route);
+    route();
+  </script>
+</body>
+</html>
