@@ -86,6 +86,20 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_regs_code ON regulations(code)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_regs_type ON regulations(rule_type)")
 
+    # Name index table for fast bilingual search
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS name_index (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        un_number TEXT NOT NULL,
+        name TEXT NOT NULL,
+        name_type TEXT NOT NULL DEFAULT 'en',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(un_number, name, name_type)
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_name_text ON name_index(name)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_name_un ON name_index(un_number)")
+
     conn.commit()
     conn.close()
     print(f"Database initialized: {DB_PATH}")
@@ -379,18 +393,176 @@ def seed_cn_names():
     return count
 
 
+def rebuild_name_index():
+    """Rebuild name_index table from dangerous_goods data"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM name_index")
+    
+    # Index English names
+    cursor.execute("""
+        INSERT OR IGNORE INTO name_index (un_number, name, name_type)
+        SELECT un_number, name_en, 'en' FROM dangerous_goods WHERE name_en != '' AND name_en IS NOT NULL
+    """)
+    
+    # Index Chinese names
+    cursor.execute("""
+        INSERT OR IGNORE INTO name_index (un_number, name, name_type)
+        SELECT un_number, name_cn, 'cn' FROM dangerous_goods WHERE name_cn != '' AND name_cn IS NOT NULL
+    """)
+    
+    cursor.execute("SELECT COUNT(*) FROM name_index")
+    total = cursor.fetchone()[0]
+    conn.commit()
+    conn.close()
+    print(f"Name index rebuilt: {total} entries")
+    return total
+
+
+def search_name_index(keyword: str, limit: int = 50):
+    """Search name index by keyword, returns UN numbers with match info"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    like = f"%{keyword}%"
+    
+    cursor.execute("""
+        SELECT un_number, name, name_type FROM name_index
+        WHERE name LIKE ? COLLATE NOCASE
+        ORDER BY
+            CASE WHEN name LIKE ? COLLATE NOCASE THEN 0 ELSE 1 END,
+            un_number
+        LIMIT ?
+    """, (like, f"{keyword}%", limit))
+    
+    results = [{"un_number": r[0], "name": r[1], "name_type": r[2]} for r in cursor.fetchall()]
+    conn.close()
+    return results
+
+
+def import_cn_batch(data: list):
+    """Batch import/update Chinese names for UN numbers.
+    data: list of dicts with keys: un_number, name_cn (optional: name_en, notes)
+    Returns count of updated/inserted records.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    count = 0
+    
+    for item in data:
+        un = item.get("un_number", "").strip()
+        name_cn = item.get("name_cn", "").strip()
+        name_en = item.get("name_en", "").strip()
+        notes = item.get("notes", "").strip()
+        
+        if not un:
+            continue
+        
+        if name_cn or name_en:
+            # Check if UN number exists
+            cursor.execute("SELECT un_number FROM dangerous_goods WHERE un_number = ?", (un,))
+            if not cursor.fetchone():
+                continue  # Skip unknown UN numbers
+            
+            updates = []
+            params = []
+            if name_cn:
+                updates.append("name_cn = ?")
+                params.append(name_cn)
+            if name_en:
+                updates.append("name_en = ?")
+                params.append(name_en)
+            if notes:
+                updates.append("notes = ?")
+                params.append(notes)
+            updates.append("reviewed = 1")
+            updates.append("updated_at = CURRENT_TIMESTAMP")
+            
+            params.append(un)
+            sql = f"UPDATE dangerous_goods SET {', '.join(updates)} WHERE un_number = ?"
+            cursor.execute(sql, params)
+            if cursor.rowcount > 0:
+                count += 1
+    
+    conn.commit()
+    
+    # Rebuild name index
+    rebuild_name_index()
+    conn.close()
+    print(f"Batch imported: {count} entries updated")
+    return count
+
+
+def import_regulations_batch(data: list):
+    """Batch import/update regulations.
+    data: list of dicts with keys matching regulations table columns.
+    Returns count of imported records.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    count = 0
+    
+    for item in data:
+        code = item.get("code", "").strip().upper()
+        if not code:
+            continue
+        
+        # Merge with existing record if present
+        cursor.execute("SELECT id FROM regulations WHERE code = ?", (code,))
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Update non-empty fields
+            for key in ["title_en", "title_cn", "summary_en", "summary_cn",
+                        "original_text", "key_points", "source_volume",
+                        "source_page", "source_section"]:
+                val = item.get(key, "")
+                if val:
+                    if key == "key_points" and isinstance(val, list):
+                        val = json.dumps(val, ensure_ascii=False)
+                    cursor.execute(f"UPDATE regulations SET {key} = ? WHERE id = ?",
+                                 (val, existing["id"]))
+        else:
+            # Insert new
+            key_points = item.get("key_points", [])
+            if isinstance(key_points, list):
+                key_points = json.dumps(key_points, ensure_ascii=False)
+            
+            cursor.execute("""
+                INSERT OR REPLACE INTO regulations
+                (code, rule_type, title_en, title_cn, summary_en, summary_cn,
+                 original_text, key_points, source_volume, source_page, source_section)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                code, item.get("rule_type", ""), item.get("title_en", ""),
+                item.get("title_cn", ""), item.get("summary_en", ""),
+                item.get("summary_cn", ""), item.get("original_text", ""),
+                key_points, item.get("source_volume", ""),
+                int(item["source_page"]) if item.get("source_page") else None,
+                item.get("source_section", "")
+            ))
+        
+        count += 1
+    
+    conn.commit()
+    conn.close()
+    print(f"Batch imported: {count} regulations")
+    return count
+
+
 def get_stats():
     conn = get_connection()
     cursor = conn.cursor()
     stats = {}
     cursor.execute("SELECT COUNT(*) FROM dangerous_goods")
     stats['total_goods'] = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM dangerous_goods WHERE name_cn != ''")
+    cursor.execute("SELECT COUNT(*) FROM dangerous_goods WHERE name_cn != '' AND name_cn IS NOT NULL")
     stats['cn_named'] = cursor.fetchone()[0]
     cursor.execute("SELECT COUNT(*) FROM regulations")
     stats['total_regs'] = cursor.fetchone()[0]
     cursor.execute("SELECT COUNT(DISTINCT class_or_division) FROM dangerous_goods")
     stats['classes'] = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM name_index")
+    stats['name_index'] = cursor.fetchone()[0]
     conn.close()
     return stats
 

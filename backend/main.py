@@ -10,7 +10,7 @@ import json
 import os
 import re
 
-from database import get_connection, init_db, import_goods_csv, seed_regulations, seed_cn_names, get_stats
+from database import get_connection, init_db, import_goods_csv, seed_regulations, seed_cn_names, get_stats, import_cn_batch, import_regulations_batch, rebuild_name_index, search_name_index
 
 app = FastAPI(title="危险货物合规查询系统", version="0.1.0")
 
@@ -102,9 +102,42 @@ def get_regulation(code: str):
     return reg
 
 
+# --- Admin Routes ---
+
+@app.post("/api/admin/import-cn")
+def admin_import_cn(items: list[dict]):
+    """Batch import/update Chinese names for UN numbers.
+    Body: [{"un_number": "3480", "name_cn": "锂离子电池组", "name_en": "Lithium ion batteries", "notes": "..."}]
+    """
+    if not items:
+        raise HTTPException(400, "请求数据不能为空")
+    count = import_cn_batch(items)
+    return {"status": "ok", "updated": count}
+
+
+@app.post("/api/admin/import-regulations")
+def admin_import_regulations(items: list[dict]):
+    """Batch import/update regulations.
+    Body: [{"code": "188", "rule_type": "special_provision", "title_cn": "...", ...}]
+    """
+    if not items:
+        raise HTTPException(400, "请求数据不能为空")
+    count = import_regulations_batch(items)
+    return {"status": "ok", "imported": count}
+
+
+@app.post("/api/admin/rebuild-index")
+def admin_rebuild_index():
+    """Rebuild name index from goods data"""
+    total = rebuild_name_index()
+    return {"status": "ok", "total_entries": total}
+
+
+# --- Enhanced Search ---
+
 @app.get("/api/search")
 def search(q: str = Query(..., min_length=1), type: str = "all"):
-    """Search by UN number, name, or regulation code"""
+    """Search by UN number, name, or regulation code (bilingual)"""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -122,19 +155,37 @@ def search(q: str = Query(..., min_length=1), type: str = "all"):
                 results["goods"].append(dict(row))
 
         # Try regulation code
-        code_search = re.sub(r'^SP', '', query_upper)
         cursor.execute("SELECT code, rule_type, title_cn FROM regulations WHERE code = ?", (query_upper,))
         row = cursor.fetchone()
         if row:
             results["regulations"].append(dict(row))
 
-    # Fuzzy search
-    if not results["goods"] and not results["regulations"]:
+    # Use name_index for bilingual fuzzy search
+    if not results["goods"]:
+        name_hits = search_name_index(q, limit=30)
+        if name_hits:
+            # Deduplicate by UN number, prefer CN name
+            seen = set()
+            for hit in name_hits:
+                if hit["un_number"] not in seen:
+                    seen.add(hit["un_number"])
+                    cursor.execute("""
+                        SELECT un_number, name_en, name_cn, class_or_division 
+                        FROM dangerous_goods WHERE un_number = ?
+                    """, (hit["un_number"],))
+                    row = cursor.fetchone()
+                    if row:
+                        results["goods"].append(dict(row))
+
+    # Fallback: direct SQL LIKE if name_index has no results
+    if not results["goods"]:
         like = f"%{q}%"
         cursor.execute("SELECT un_number, name_en, name_cn, class_or_division FROM dangerous_goods WHERE un_number LIKE ? OR name_en LIKE ? OR name_cn LIKE ? LIMIT 20", (like, like, like))
         for row in cursor.fetchall():
             results["goods"].append(dict(row))
 
+    if not results["regulations"]:
+        like = f"%{q}%"
         cursor.execute("SELECT code, rule_type, title_cn, summary_cn FROM regulations WHERE code LIKE ? OR title_cn LIKE ? OR summary_cn LIKE ? LIMIT 20", (like, like, like))
         for row in cursor.fetchall():
             results["regulations"].append(dict(row))
