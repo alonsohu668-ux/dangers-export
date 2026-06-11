@@ -1,0 +1,93 @@
+un_number,name_cn,name_en,class_or_division,packing_group
+1090,丙酮,Acetone,3,II
+1123,汽油,Gasoline,3,II
+1203,甲醇,Methanol,3,II
+1210,涂料(油漆),Paint,3,III
+1170,二氯乙烯,Dichloroethene,3,I
+1162,二氯丙醇,Dichloropropanol,6.1,III
+1198,甲酸,Formic acid,8,II
+1173,乙酸异丙酯,Isopropyl acetate,3,II
+1175,丁酮,Methyl ethyl ketone,3,II
+1263,苯乙烯,Styrene monomer,3,III
+1274,硝基丙烷,Nitropropane,3,II
+1267,苯胺,Aniline,6.1,II
+1279,丙烯酸乙酯,Ethyl acrylate,3,II
+1294,异丙胺,Isopropylamine,3,I
+1305,乙二胺,Ethylenediamine,8,II
+1830,硫酸,Sulfuric acid,8,II
+1834,盐酸(氢氯酸),Hydrochloric acid,8,II
+1789,乙酸(醋酸),Acetic acid glacial,8,II
+1760,高氯酸,Perchloric acid,8,I
+1791,过氧化氢溶液(＜8%),Hydrogen peroxide,aqueous ＜8%,5.1,III
+2014,过氧化氢水溶液(≥8%但＜20%),Hydrogen peroxide,aqueous ≥8%＜20%,5.1,III
+2015,过氧化氢水溶液(20%≤H2O2≤30%),Hydrogen peroxide,aqueous 20-30%,5.1,II
+2016,过氧化氢水溶液(＞30%),Hydrogen peroxide,stabilized ＞30%,5.1,I
+2022,硝酸钾,Potassium nitrate,5.1,III
+2031,硝酸铵水溶液,Ammonium nitrate solution,5.1,III
+2059,硝酸(发烟的),Nitric acid,fuming,8,I
+2079,次氯酸钠溶液,Sodium hypochlorite solution,8,III
+2209,甲酚(混合异构体),Cresol mixed,6.1,II
+2304,磷化铝,Aluminium phosphide,6.1,I
+2305,磷化锌,Zinc phosphide,6.1,I
+2315,磷化镁,Magnesium phosphide,6.1,I
+1541,溴(溴素),Bromine,8,I
+1579,苯胺,Aniline,6.1,II
+1648,氯甲酸苯酯,Phenyl chloroformate,6.1,I
+1654,甲苯二异氰酸酯,Toluene diisocyanate,6.1,I
+1655,异氰酸甲酯,Methyl isocyanate,6.1,I
+1671,三氯化磷,Phosphorus trichloride,8,II
+1673,三氯氧磷,Phosphorus oxychloride,8,I
+1678,四氯化钛,Titanium tetrachloride,8,I
+1680,溴化硼,Boron tribromide,8,I
+1689,溴化铝,Aluminium bromide,8,II
+1693,溴化氢(氢溴酸),Hydrogen bromide,anhydrous,8,I
+1744,溴化钠水溶液,Sodium bromate solution,5.1,III
+1754,氯磺酸,Chlorosulfonic acid,8,I
+1769,三氯化铁溶液,Ferric chloride solution,8,III
+1779,磷酸(正磷酸),Phosphoric acid,8,III
+1799,溴,Bromine,8,I
+1805,氢氟酸(氟化氢),Hydrofluoric acid,8,I
+1810,氟硼酸,Fluoroboric acid,8,I
+1824,碱性电池液(碱液),Alkaline battery fluid,8,II
+1823,碱性腐蚀性液体(未另作规定的),Alkaline corrosive liquid,n.o.s.,8,II
+1832,硫酸废液,Sulfuric acid,spent,8,II
+1845,生石灰(氧化钙),Calcium oxide,8,III
+1846,氟化钾,Potassium fluoride,solid,6.1,II
+1847,氟化钠,Sodium fluoride,solid,6.1,II
+1848,氢氧化钠(烧碱),Sodium hydroxide,solid,8,II
+1849,氢氧化钾(苛性钾),Potassium hydroxide,solid,8,II
+1854,硫脲,Thiourea,6.1,III
+1859,甲萘威(西维因),Carbaryl,6.1,III
+1870,敌敌畏,Dichlorvos (DDVP),6.1,I
+1873,马拉硫磷,Malathion,6.1,III
+1884,甲胺磷溶液,Methamidophos solution,6.1,I
+1888,百草枯(水溶液),Paraquat solution,6.1,II
+1903,氯乙醛,Chloroacetaldehyde,6.1,I
+1910,丙烯醛,Acrolein,6.1,I
+1912,氯甲酸乙酯,Ethyl chloroformate,6.1,I
+1918,甲基苯乙烯(混合异构体),Methylstyrene mixed,3,III
+1919,丙烯酸甲酯(稳定的),Methyl acrylate,3,II
+1920,丙烯酸正丁酯(稳定的),n-Butyl acrylate,3,II
+1921,丙烯酸异辛酯(稳定的),Isooctyl acrylate,3,III
+1923,丙烯酸(稳定的),Acrylic acid,stabilized,8,II
+1929,丙烯腈(稳定的),Acrylonitrile,stabilized,3,I
+1931,乙腈,Acetonitrile,3,II
+1933,二甲基甲酰胺,Dimethylformamide,3,III
+1935,丁醇,Butanols,3,III
+1936,丁酮,Methyl ethyl ketone,3,II
+1937,三氯乙烯,Trichloroethylene,6.1,II
+1938,四氯乙烯,Tetrachloroethylene,6.1,III
+1940,硝基甲苯(混合异构体),Nitrotoluene mixed,6.1,III
+1941,硝基萘,Nitronaphthalene,4.1,III
+1942,萘(粗萘/精萘),Naphthalene,4.1,III
+1944,樟脑(合成的),Camphor synthetic,4.1,II
+1945,松香(树脂松节油),Rosin,4.1,III
+1946,橡胶制品,Rubber articles,4.1,III
+1947,火柴(安全的),Matches,safety,4.1,III
+1949,干草/稻草,Hay/Straw,4.1,III
+1950,气雾剂,Aerosols,2.1,
+1986,醇类(未另作规定的),Alcohols n.o.s.,3,II/III
+1987,醇类(未另作规定的),Alcohols n.o.s.,3,III
+1988,醛类(未另作规定的),Aldehydes n.o.s.,3,II
+1993,易燃液体(未另作规定的),Flammable liquid n.o.s.,3,II/III
+1994,易燃液体(未另作规定的),Flammable liquid n.o.s.,3,III
