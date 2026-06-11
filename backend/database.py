@@ -7,8 +7,8 @@ import csv
 import os
 import json
 
-DB_PATH = os.environ.get("DB_PATH", "/workspace/projects/dangerous-goods-compliance/data/compliance.db")
-DATA_DIR = os.environ.get("DATA_DIR", "/workspace/projects/dangerous-goods-compliance/data/extracted_csv")
+DB_PATH = os.environ.get("DB_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "compliance.db"))
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "extracted_csv"))
 
 
 def get_connection():
