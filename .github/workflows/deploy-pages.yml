@@ -1,0 +1,116 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**', '.github/workflows/deploy-pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  allow-cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate static data
+        run: |
+          # Build minimal DB for data export
+          cd backend
+          pip install --quiet pdfplumber 2>/dev/null || true
+          python3 -c "
+          import sqlite3, csv, os, json
+
+          DB_PATH = 'temp_export.db'
+          conn = sqlite3.connect(DB_PATH)
+          conn.row_factory = sqlite3.Row
+          c = conn.cursor()
+
+          c.execute('''CREATE TABLE goods(un_number TEXT UNIQUE, name_en TEXT, name_cn TEXT, class_or_division TEXT, packing_group TEXT)''')
+          c.execute('''CREATE TABLE regs(code TEXT UNIQUE, rule_type TEXT, title_en TEXT, title_cn TEXT, summary_cn TEXT, original_text TEXT, key_points TEXT, source_volume TEXT, source_page INTEGER, source_section TEXT)''')
+
+          csv_path = os.path.join('..', 'data', 'extracted_csv', 'goods_vol1.csv')
+          if os.path.exists(csv_path):
+              with open(csv_path, 'r') as f:
+                  for row in csv.DictReader(f):
+                      c.execute('INSERT OR REPLACE INTO goods VALUES(?,?,?,?,?)',
+                          (row['un_number'], row['name_en'], '', row['class_or_division'], row['packing_group']))
+
+          # Import CN names
+          cn_path = os.path.join('..', 'data', 'manual_cn', 'top50_common_goods.csv')
+          if os.path.exists(cn_path):
+              with open(cn_path, 'r') as f:
+                  for row in csv.DictReader(f):
+                      c.execute('UPDATE goods SET name_cn=? WHERE un_number=?', (row.get('name_cn',''), row['un_number']))
+
+          # Seed regulations (hardcoded for CI)
+          regs = [
+              ('188','special_provision','','小型锂/钠电池和电池组的运输例外条件','','交付运输的电池和电池组，如满足SP188条件，可不受本规章其他规定限制。','','[\"锂离子单电池额定值通常不得超过20Wh\",\"锂离子电池组额定值通常不得超过100Wh\",\"应标明Wh额定值\",\"需符合测试和质量要求\",\"应防止短路\",\"包装件需锂电池组标记\"]','Vol.I',334,'3.3'),
+              ('P903','packing_instruction','','常规电池包装指南','','适用于UN3090、3091、3480、3481。用于普通锂/钠电池。','允许使用下列包装，但须符合4.1.1和4.1.3的一般规定。','[\"电池应防止因移动造成损坏\",\"包装应符合包装类别II性能水平\",\"设备应固定在外包装中\"]','Vol.II',90,'4.1.4'),
+              ('P908','packing_instruction','','损坏或有缺陷电池包装指南','','适用于运输损坏或有缺陷的锂电池。','','[]','Vol.II',91,'4.1.4'),
+              ('P909','packing_instruction','','待处理或回收电池包装指南','','适用于运输待处理或回收的锂电池。','允许使用桶、箱等包装。金属包装应安装不导电衬里。','[\"金属包装应安装不导电衬里\",\"包装应符合包装类别II性能水平\"]','Vol.II',94,'4.1.4'),
+              ('P910','packing_instruction','','小批量生产或原型电池包装指南','','适用于小批量生产或原型的锂电池。','','[]','Vol.II',95,'4.1.4'),
+              ('P911','packing_instruction','','特殊危险状态电池包装指南','','适用于特殊危险状态的锂电池。','','[]','Vol.II',96,'4.1.4'),
+              ('LP903','large_packing','','大型电池包装指南','','适用于大型电池/电池组。','允许使用包装类别II性能水平的硬质大型包装。','[\"允许使用包装类别II性能水平硬质大型包装\",\"防止运输中移动和接触损坏\",\"保护电池组防止短路\"]','Vol.II',111,'4.1.4'),
+              ('LP904','large_packing','','损坏电池大型包装指南','','适用于运输损坏的锂电池大型包装。','','[]','Vol.II',112,'4.1.4'),
+              ('LP905','large_packing','','待回收电池大型包装指南','','适用于待回收锂电池大型包装。','','[]','Vol.II',113,'4.1.4'),
+              ('LP906','large_packing','','特殊电池大型包装指南','','适用于特殊状态锂电池大型包装。','','[]','Vol.II',114,'4.1.4'),
+              ('230','special_provision','','温度控制要求','','本物质运输时必须保持在控温条件下。','','[]','Vol.I',335,'3.3'),
+              ('310','special_provision','','生产批量/原型电池规定','','适用于小批量或原型锂电池运输规定。','','[]','Vol.I',336,'3.3'),
+              ('348','special_provision','','锂离子电池组Wh标记规定','','要求在电池组外壳上标明Wh额定值。','','[]','Vol.I',337,'3.3'),
+              ('360','special_provision','','安装在设备中的锂电池规定','','UN3481设备中含锂电池的特殊运输规定。','','[]','Vol.I',338,'3.3'),
+              ('376','special_provision','','损坏或有缺陷电池规定','','损坏锂电池的特殊包装和运输要求。','','[]','Vol.I',339,'3.3'),
+              ('377','special_provision','','待回收电池规定','','待回收锂电池的特殊运输要求。','','[]','Vol.I',339,'3.3'),
+              ('384','special_provision','','9A标签/标志规定','','关于锂电池第9类标签和标记的特殊要求。','','[]','Vol.I',340,'3.3'),
+              ('387','special_provision','','混合锂电池规定','','同时含锂金属和锂离子电池的电池组规定。','','[]','Vol.I',340,'3.3'),
+              ('390','special_provision','','特定日期后制造的锂电池规定','','2023年1月1日后制造的锂电池附加要求。','','[]','Vol.I',340,'3.3'),
+          ]
+          for r in regs:
+              c.execute('INSERT OR REPLACE INTO regs VALUES(?,?,?,?,?,?,?,?,?,?,?)', r)
+
+          conn.commit()
+
+          # Export
+          c.execute('SELECT un_number, name_en, name_cn, class_or_division, packing_group FROM goods ORDER BY CAST(un_number AS INTEGER)')
+          goods = [dict(r) for r in c.fetchall()]
+          c.execute('SELECT * FROM regs ORDER BY code')
+          regs = [dict(r) for r in c.fetchall()]
+          conn.close()
+
+          os.remove(DB_PATH)
+
+          with open(os.path.join('..', 'frontend', 'static-data.js'), 'w') as f:
+              f.write('const STATIC_DATA = ')
+              json.dump({'goods': goods, 'regulations': regs}, f, ensure_ascii=False, separators=(',',':'))
+              f.write(';')
+
+          print(f'Exported: {len(goods)} goods, {len(regs)} regs')
+          "
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
