@@ -43,8 +43,9 @@
     .btn-primary { background: #fff; color: #123378; }
     .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.16); }
     .quick-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    .quick-tag { color: #fff; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); border-radius: 999px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+    .quick-tag { color: #fff; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); border-radius: 999px; padding: 7px 10px; font-size: 13px; cursor: pointer; transition: .15s; }
     .quick-tag:hover { background: rgba(255,255,255,.25); }
+    .search-hint { margin-top: 10px; font-size: 12px; color: rgba(255,255,255,.6); }
 
     main { max-width: 1180px; margin: -32px auto 70px; padding: 0 24px; }
     .layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 22px; align-items: start; }
@@ -73,7 +74,6 @@
     th { background: #f2f5fa; font-weight: 800; }
     td.name-cell { text-align: left; min-width: 260px; }
     td.code-cell { width: 92px; }
-    .column-no { display: block; color: #667085; font-weight: 700; margin-top: 4px; font-size: 12px; }
 
     .click-code { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; margin: 2px 0; padding: 5px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-weight: 800; text-decoration: none; cursor: pointer; border: 1px solid #c8d8ff; transition: .15s ease; }
     .click-code:hover { background: var(--primary); color: #fff; transform: translateY(-1px); }
@@ -103,13 +103,33 @@
     .sr-left { flex: 1; }
     .sr-un { font-weight: 800; font-size: 18px; color: var(--primary); }
     .sr-name { font-size: 14px; margin-top: 2px; }
+    .sr-name-en { font-size: 12px; color: var(--muted); margin-top: 1px; }
     .sr-class { font-size: 13px; color: var(--muted); font-weight: 700; }
 
+    /* Browse page */
+    .class-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .class-tab { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: 14px; font-weight: 700; cursor: pointer; transition: .15s; }
+    .class-tab:hover, .class-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .class-tab .count { font-size: 12px; font-weight: 600; opacity: .7; }
+    .browse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+    .browse-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; transition: .15s; }
+    .browse-item:hover { border-color: #9ab4ff; background: var(--primary-soft); }
+    .bi-un { font-weight: 800; color: var(--primary); font-size: 16px; min-width: 60px; }
+    .bi-info { flex: 1; min-width: 0; }
+    .bi-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bi-name-en { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bi-class { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+    .page-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-weight: 700; cursor: pointer; font-size: 14px; transition: .15s; }
+    .page-btn:hover, .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
     .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 18px; }
+    .stats-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+    .stat-chip { padding: 6px 12px; border-radius: 999px; background: var(--primary-soft); font-size: 13px; font-weight: 700; color: var(--primary); }
 
     footer { text-align: center; color: var(--muted); padding: 30px 24px 60px; font-size: 13px; }
     @media (max-width: 900px) { .hero, .layout { grid-template-columns: 1fr; } .side-card { position: static; } .meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 560px) { header { padding: 22px 16px 46px; } main { padding: 0 14px; } .search-row { flex-direction: column; } .meta-grid { grid-template-columns: 1fr; } .card { padding: 16px; } .topbar { flex-direction: column; align-items: flex-start; } }
+    @media (max-width: 560px) { header { padding: 22px 16px 46px; } main { padding: 0 14px; } .search-row { flex-direction: column; } .meta-grid { grid-template-columns: 1fr; } .card { padding: 16px; } .topbar { flex-direction: column; align-items: flex-start; } .browse-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -118,24 +138,27 @@
       <div class="header-inner">
         <div class="topbar">
           <div class="logo"><div class="logo-mark">UN</div> 危险货物合规查询系统</div>
-          <div class="version-badge">UN Model Regulations Rev.23 · v0.1 MVP</div>
+          <div class="version-badge">UN Rev.23 · v0.2</div>
         </div>
         <div class="hero">
           <div>
-            <h1>输入 UN 编号，自动关联后续法规要求</h1>
-            <p class="subtitle">基于联合国危险货物运输建议书（规章范本）第23修订版。输入UN编号，系统返回危险货物一览表信息，特殊规定、包装指南等均可点击查看详情。</p>
+            <h1>输入 UN 编号或名称，自动关联法规要求</h1>
+            <p class="subtitle">基于联合国危险货物运输建议书第23修订版。支持中英文双语搜索、按类别浏览、合规检查单生成。</p>
           </div>
           <div class="search-card">
             <div class="search-row">
-              <input id="searchInput" type="search" placeholder="请输入 UN 编号 / 名称 / 规则编号" />
+              <input id="searchInput" type="search" placeholder="UN 编号 / 中文名 / 英文名 / 规则编号" />
               <button class="btn-primary" id="searchBtn">查询</button>
             </div>
             <div class="quick-tags">
-              <span class="quick-tag" data-q="3480">UN3480 锂离子电池组</span>
+              <span class="quick-tag" data-q="3480">UN3480 锂离子电池</span>
               <span class="quick-tag" data-q="P903">P903 包装指南</span>
-              <span class="quick-tag" data-q="188">特殊规定 188</span>
+              <span class="quick-tag" data-q="188">SP188</span>
               <span class="quick-tag" data-q="1950">UN1950 气雾剂</span>
+              <span class="quick-tag" data-q="1830">UN1830 硫酸</span>
+              <span class="quick-tag" data-q="1090">UN1090 丙酮</span>
             </div>
+            <div class="search-hint">💡 支持中文搜索：气雾剂、硫酸、甲醇、苯胺等</div>
           </div>
         </div>
       </div>
@@ -151,7 +174,7 @@
       </div>
     </main>
 
-    <footer>危险货物合规查询系统 MVP · 数据来源：UN Recommendations on the Transport of Dangerous Goods Rev.23</footer>
+    <footer>危险货物合规查询系统 v0.2 · 数据来源：UN Recommendations Rev.23</footer>
   </div>
 
   <script>
@@ -159,7 +182,17 @@
     const searchInput = document.getElementById('searchInput');
     const sidebarNav = document.getElementById('sidebarNav');
 
-    // Router
+    // Class name mapping
+    const classNames = {
+      '1': '爆炸品', '1.1': '爆炸品 1.1', '1.2': '爆炸品 1.2', '1.3': '爆炸品 1.3',
+      '1.4': '爆炸品 1.4', '1.5': '爆炸品 1.5', '1.6': '爆炸品 1.6',
+      '2': '气体', '2.1': '易燃气体', '2.2': '非易燃无毒气体', '2.3': '有毒气体',
+      '3': '易燃液体', '4': '易燃固体/自反应', '4.1': '易燃固体', '4.2': '易自燃物质', '4.3': '遇水放出易燃气',
+      '5': '氧化剂/有机过氧化物', '5.1': '氧化性物质', '5.2': '有机过氧化物',
+      '6': '有毒/感染性物质', '6.1': '有毒物质', '6.2': '感染性物质',
+      '7': '放射性物质', '8': '腐蚀性物质', '9': '杂类危险物质'
+    };
+
     function getRoute() {
       const hash = window.location.hash || '#/';
       return hash.replace(/^#\/?/, '');
@@ -171,7 +204,6 @@
       return res.json();
     }
 
-    // Classify rule code
     function classifyCode(code) {
       if (/^LP/i.test(code)) return 'LP';
       if (/^P/i.test(code)) return 'P';
@@ -188,11 +220,6 @@
       return map[type] || '规则';
     }
 
-    function codeLink(code, extra) {
-      const type = classifyCode(code);
-      return `<a class="click-code" href="#/rule/${type}/${encodeURIComponent(code)}">${code}</a>${extra || ''}`;
-    }
-
     function chips(codes) {
       if (!codes || codes.length === 0) return `<span class="muted">—</span>`;
       return `<div class="chips">${codes.map(c => {
@@ -202,7 +229,16 @@
     }
 
     function updateSidebar(items) {
-      if (!items || items.length === 0) { sidebarNav.innerHTML = '<p class="muted" style="padding:8px;">查询后显示导航</p>'; return; }
+      if (!items || items.length === 0) {
+        sidebarNav.innerHTML = `
+          <a class="nav-link" href="#/browse">📁 按类别浏览</a>
+          <a class="nav-link" href="#/goods/3480">🔋 UN3480 锂电池</a>
+          <a class="nav-link" href="#/goods/1950">🧴 UN1950 气雾剂</a>
+          <a class="nav-link" href="#/goods/1830">🧪 UN1830 硫酸</a>
+          <a class="nav-link" href="#/goods/1090">⚗️ UN1090 丙酮</a>
+        `;
+        return;
+      }
       sidebarNav.innerHTML = items.map(i => `<a class="nav-link" href="${i.href}">${i.label} <span>›</span></a>`).join('');
     }
 
@@ -214,7 +250,7 @@
         const b = data.basic;
 
         updateSidebar([
-          { href: `#/goods/${un}`, label: `UN${un} 查询结果` },
+          { href: `#/goods/${un}`, label: `UN${un} ${b.name_cn || b.name_en}` },
           ...data.special_provisions.slice(0, 3).map(sp => ({ href: `#/rule/${classifyCode(sp.code)}/${sp.code}`, label: `${sp.code} ${sp.title_cn || ''}` })),
           ...data.packing_instructions.slice(0, 3).map(pi => ({ href: `#/rule/${classifyCode(pi.code)}/${pi.code}`, label: `${pi.code} ${pi.title_cn || ''}` })),
         ]);
@@ -229,7 +265,7 @@
                 <h2 style="margin-top:12px;">${displayName}</h2>
                 ${b.name_cn && b.name_en ? `<p class="muted">${b.name_en}</p>` : ''}
               </div>
-              <div class="pill">第 ${b.class_or_division} 类</div>
+              <div class="pill">第 ${b.class_or_division} 类 · ${classNames[b.class_or_division] || ''}</div>
             </div>
             <div class="meta-grid">
               <div class="meta-box"><div class="meta-label">类别或项</div><div class="meta-value">${b.class_or_division}</div></div>
@@ -252,7 +288,7 @@
           html += `<div class="card"><div class="source-box"><strong>来源</strong><span>${data.sources.join('；')}</span></div></div>`;
         }
 
-        html += `<div class="notice">⚠️ 注意：本系统为 MVP 版本，部分条款摘要待人工审核完善。正式合规决策请以官方规章原文为准。</div>`;
+        html += `<div class="notice">⚠️ 本系统为辅助参考，部分条款摘要待人工审核完善。正式合规决策请以官方规章原文为准。</div>`;
         app.innerHTML = html;
 
       } catch (e) {
@@ -305,16 +341,17 @@
         let html = `<div class="card"><h3>搜索结果：${q}</h3></div>`;
 
         if (data.goods.length > 0) {
-          html += `<div class="card"><h3>危险货物</h3><ul class="search-results">`;
+          html += `<div class="card"><h3>危险货物 (${data.goods.length})</h3><ul class="search-results">`;
           data.goods.forEach(g => {
             const name = g.name_cn || g.name_en || '';
-            html += `<li onclick="location.hash='#/goods/${g.un_number}'"><div class="sr-left"><div class="sr-un">UN${g.un_number}</div><div class="sr-name">${name}</div></div><div class="sr-class">第${g.class_or_division}类</div></li>`;
+            const nameEn = g.name_cn && g.name_en ? g.name_en : '';
+            html += `<li onclick="location.hash='#/goods/${g.un_number}'"><div class="sr-left"><div class="sr-un">UN${g.un_number}</div><div class="sr-name">${name}</div>${nameEn ? `<div class="sr-name-en">${nameEn}</div>` : ''}</div><div class="sr-class">第${g.class_or_division}类 ${classNames[g.class_or_division] || ''}</div></li>`;
           });
           html += `</ul></div>`;
         }
 
         if (data.regulations.length > 0) {
-          html += `<div class="card"><h3>法规规则</h3><ul class="search-results">`;
+          html += `<div class="card"><h3>法规规则 (${data.regulations.length})</h3><ul class="search-results">`;
           data.regulations.forEach(r => {
             const label = r.title_cn || r.title_en || r.code;
             html += `<li onclick="location.hash='#/rule/${classifyCode(r.code)}/${r.code}'"><div class="sr-left"><div class="sr-un">${r.code}</div><div class="sr-name">${label}</div></div><div class="sr-class">${ruleLabel(classifyCode(r.code))}</div></li>`;
@@ -323,7 +360,7 @@
         }
 
         if (data.goods.length === 0 && data.regulations.length === 0) {
-          html += `<div class="card empty"><p>未找到匹配结果，请尝试其他关键词。</p></div>`;
+          html += `<div class="card empty"><p>未找到匹配结果。试试搜索 UN 编号或货物中文名。</p></div>`;
         }
 
         app.innerHTML = html;
@@ -333,18 +370,103 @@
       }
     }
 
+    async function renderBrowse(classFilter, page) {
+      page = page || 1;
+      try {
+        const data = await fetchJSON(`/api/browse?class_or_division=${encodeURIComponent(classFilter || '')}&page=${page}&size=50`);
+
+        const tabs = data.classes.map(c => {
+          const active = c === classFilter ? ' active' : '';
+          return `<span class="class-tab${active}" onclick="location.hash='#/browse/${encodeURIComponent(c)}'" data-class="${c}">第${c}类 ${classNames[c] || ''}<span class="count"></span></span>`;
+        }).join('');
+
+        const allTab = !classFilter ? ' active' : '';
+        let html = `
+          <div class="card">
+            <h3>按类别浏览</h3>
+            <p class="muted" style="margin-top:4px;">共 ${data.total} 条危险货物记录</p>
+          </div>
+          <div class="card">
+            <div class="class-tabs">
+              <span class="class-tab${allTab}" onclick="location.hash='#/browse'">全部</span>
+              ${tabs}
+            </div>
+          </div>
+          <div class="card">`;
+
+        if (data.items.length === 0) {
+          html += `<div class="empty">该类别暂无数据</div>`;
+        } else {
+          html += `<div class="browse-grid">`;
+          data.items.forEach(g => {
+            const name = g.name_cn || g.name_en || '';
+            const nameEn = g.name_cn && g.name_en ? g.name_en : '';
+            html += `
+              <div class="browse-item" onclick="location.hash='#/goods/${g.un_number}'">
+                <div class="bi-un">UN${g.un_number}</div>
+                <div class="bi-info">
+                  <div class="bi-name">${name}</div>
+                  ${nameEn ? `<div class="bi-name-en">${nameEn}</div>` : ''}
+                </div>
+                <div class="bi-class">第${g.class_or_division}类</div>
+              </div>`;
+          });
+          html += `</div>`;
+
+          // Pagination
+          const totalPages = Math.ceil(data.total / data.size);
+          if (totalPages > 1) {
+            html += `<div class="pagination">`;
+            for (let i = 1; i <= Math.min(totalPages, 20); i++) {
+              const active = i === data.page ? ' active' : '';
+              html += `<button class="page-btn${active}" onclick="location.hash='#/browse/${encodeURIComponent(classFilter || '')}/${i}'">${i}</button>`;
+            }
+            if (totalPages > 20) html += `<span class="muted" style="padding:8px;">...共 ${totalPages} 页</span>`;
+            html += `</div>`;
+          }
+        }
+
+        html += `</div>`;
+        app.innerHTML = html;
+
+        // Update sidebar with class summary
+        updateSidebar([
+          { href: '#/browse', label: '📁 全部浏览' },
+          ...data.classes.slice(0, 8).map(c => ({ href: `#/browse/${c}`, label: `第${c}类 ${classNames[c] || ''}` })),
+        ]);
+
+      } catch (e) {
+        app.innerHTML = `<div class="card empty"><p>加载失败：${e.message}</p></div>`;
+      }
+    }
+
     function renderHome() {
       updateSidebar([
-        { href: '#/goods/3480', label: 'UN3480 锂离子电池组' },
-        { href: '#/goods/3481', label: 'UN3481 设备中锂电池' },
-        { href: '#/goods/1950', label: 'UN1950 气雾剂' },
-        { href: '#/goods/3090', label: 'UN3090 锂金属电池' },
+        { href: '#/browse', label: '📁 按类别浏览' },
+        { href: '#/goods/3480', label: '🔋 UN3480 锂电池' },
+        { href: '#/goods/3481', label: '🔋 UN3481 设备中锂电池' },
+        { href: '#/goods/1950', label: '🧴 UN1950 气雾剂' },
+        { href: '#/goods/3090', label: '🔋 UN3090 锂金属电池' },
+        { href: '#/goods/1830', label: '🧪 UN1830 硫酸' },
+        { href: '#/goods/1090', label: '⚗️ UN1090 丙酮' },
       ]);
       app.innerHTML = `
         <div class="card empty">
           <h3>欢迎使用危险货物合规查询系统</h3>
-          <p style="margin-top:12px;">在上方搜索框输入 UN 编号（如 3480）、货物名称或规则编号（如 P903），即可查看相关合规要求。</p>
-          <p style="margin-top:8px;">快捷查询：UN3480 · UN3481 · UN3090 · UN1950 · P903 · SP188</p>
+          <p style="margin-top:12px;">在上方搜索框输入 UN 编号、货物中英文名称或规则编号，即可查看相关合规要求。</p>
+          <p style="margin-top:8px;color:var(--muted);font-size:14px;">
+            <strong>快速查询：</strong>
+            <a href="#/goods/3480" style="color:var(--primary)">UN3480</a> ·
+            <a href="#/goods/3481" style="color:var(--primary)">UN3481</a> ·
+            <a href="#/goods/1950" style="color:var(--primary)">UN1950</a> ·
+            <a href="#/goods/1830" style="color:var(--primary)">UN1830</a> ·
+            <a href="#/goods/1090" style="color:var(--primary)">UN1090</a> ·
+            <a href="#/rule/SP/P903" style="color:var(--primary)">P903</a> ·
+            <a href="#/rule/SP/188" style="color:var(--primary)">SP188</a>
+          </p>
+          <p style="margin-top:16px;">
+            <a href="#/browse" class="btn-primary" style="display:inline-block;padding:12px 24px;border-radius:14px;text-decoration:none;font-size:16px;">📁 按类别浏览全部 2350 条危险货物</a>
+          </p>
         </div>`;
     }
 
@@ -358,6 +480,10 @@
         await renderGoods(parts[1]);
       } else if (parts[0] === 'rule' && parts[2]) {
         await renderRule(parts[1], decodeURIComponent(parts[2]));
+      } else if (parts[0] === 'search' && parts[1]) {
+        await renderSearch(decodeURIComponent(parts[1]));
+      } else if (parts[0] === 'browse') {
+        await renderBrowse(parts[1] || null, parseInt(parts[2]) || 1);
       } else {
         renderHome();
       }
@@ -368,7 +494,7 @@
       const q = searchInput.value.trim();
       if (!q) return;
       const isRule = /^(P|LP|IBC|T|TP|BK|PP|SP)\d+/i.test(q);
-      const isUN = /^\d+$/.test(q);
+      const isUN = /^\d{3,4}$/.test(q);
       if (isUN) {
         location.hash = `#/goods/${q}`;
       } else if (isRule) {
